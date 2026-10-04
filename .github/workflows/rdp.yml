@@ -16,17 +16,27 @@ jobs:
         Start-Sleep -Seconds 5
         & "C:\Program Files\Tailscale\tailscale.exe" up --authkey="${{ secrets.TAILSCALE_AUTHKEY }}" --unattended
 
-    - name: Bikin User RDP
+    - name: Bikin User RDP & Paksa Tampilan
       shell: powershell
       run: |
+        # 1. Buka jalur RDP
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0
         
+        # 2. Bikin akun baru
         $Password = ConvertTo-SecureString "P@sswordRDP123!" -AsPlainText -Force
         New-LocalUser -Name "zul" -Password $Password
         Add-LocalGroupMember -Group "Administrators" -Member "zul"
         Add-LocalGroupMember -Group "Remote Desktop Users" -Member "zul"
+        
+        # 3. Paksa Windows nyiapin Desktop Environment buat RDP
+        reg add "HKLM\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" /v fBindToPort /t REG_DWORD /d 1 /f
+        reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" /v fAllowUnsolicited /t REG_DWORD /d 1 /f
+        reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" /v MaxInstanceCount /t REG_DWORD /d 999999 /f
+        
+        # 4. Restart layanan RDP biar setingan nyerap
+        Restart-Service -Name termservice -Force
 
     - name: Keep Alive
       shell: powershell
