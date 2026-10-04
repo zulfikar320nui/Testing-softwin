@@ -16,16 +16,17 @@ jobs:
         Start-Sleep -Seconds 5
         & "C:\Program Files\Tailscale\tailscale.exe" up --authkey="${{ secrets.TAILSCALE_AUTHKEY }}" --unattended
 
-    - name: Setting RDP & Password
+    - name: Bikin User RDP
       shell: powershell
       run: |
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0
+        
         $Password = ConvertTo-SecureString "P@sswordRDP123!" -AsPlainText -Force
-        Set-LocalUser -Name "runneradmin" -Password $Password
-        Add-LocalGroupMember -Group "Remote Desktop Users" -Member "runneradmin"
-        reg add "HKLM\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" /v fBindToPort /t REG_DWORD /d 1 /f
+        New-LocalUser -Name "zul" -Password $Password
+        Add-LocalGroupMember -Group "Administrators" -Member "zul"
+        Add-LocalGroupMember -Group "Remote Desktop Users" -Member "zul"
 
     - name: Keep Alive
       shell: powershell
