@@ -1,18 +1,22 @@
-​name: Windows RDP
-​on:
+name: Windows RDP
+
+on:
   workflow_dispatch:
-​jobs:
+
+jobs:
   build:
     runs-on: windows-latest
-​steps:
+
+    steps:
     - name: Setup Tailscale
       shell: powershell
       run: |
-        Invoke-WebRequest '[https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe](https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe)' -OutFile 'tailscale-setup.exe'
+        Invoke-WebRequest 'https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe' -OutFile 'tailscale-setup.exe'
         Start-Process 'tailscale-setup.exe' -ArgumentList '/quiet' -Wait
         Start-Sleep -Seconds 5
         & "C:\Program Files\Tailscale\tailscale.exe" up --authkey="${{ secrets.TAILSCALE_AUTHKEY }}" --unattended
-​- name: Setting RDP & Password
+
+    - name: Setting RDP & Password
       shell: powershell
       run: |
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
@@ -22,6 +26,7 @@
         Set-LocalUser -Name "runneradmin" -Password $Password
         Add-LocalGroupMember -Group "Remote Desktop Users" -Member "runneradmin"
         reg add "HKLM\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" /v fBindToPort /t REG_DWORD /d 1 /f
-​- name: Keep Alive
+
+    - name: Keep Alive
       shell: powershell
       run: Start-Sleep -Seconds 21600
